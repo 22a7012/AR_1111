@@ -108,22 +108,29 @@ const initThree = () => {
   canvas = document.getElementById("canvas");
   scene = new THREE.Scene();
 
-  camera = new THREE.PerspectiveCamera(45, w/h, 0.1, 30);
+  camera = new THREE.PerspectiveCamera(45, w/h, 0.1, 100);
   camera.position.set(0,0,0);
 
-  // --- 真ん中に固定オブジェクト ---
-  const geometry = new THREE.BoxGeometry(1,1,1);
-  const material = new THREE.MeshNormalMaterial();
-  object = new THREE.Mesh(geometry, material);
-  object.position.set(0,0,-5); // カメラ前方に固定
-  scene.add(object);
+  // --- 複雑な立体オブジェクト（トーラス + 球） ---
+  const torus = new THREE.Mesh(
+    new THREE.TorusGeometry(1, 0.3, 16, 100),
+    new THREE.MeshNormalMaterial()
+  );
+  const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5, 32, 32),
+    new THREE.MeshNormalMaterial()
+  );
+  torus.add(sphere); // 球をトーラスの子にして複雑に見せる
+  torus.position.set(0,0,-5);
+  scene.add(torus);
+  object = torus;
 
   renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, canvas:canvas });
   renderer.setSize(w,h);
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setClearColor(0x000000,0);
 
-  // --- カメラ回転用の DeviceOrientationControls ---
+  // --- DeviceOrientationControls ---
   controls = new THREE.DeviceOrientationControls(camera, true);
 
   // --- アニメーションループ ---
