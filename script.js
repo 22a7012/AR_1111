@@ -133,8 +133,8 @@ function initThree(){
 }
 
 function render(){
-  object.rotation.x += 0.01;
-  object.rotation.y += 0.01;
+  //object.rotation.x += 0.01;
+  //object.rotation.y += 0.01;
   controls.update();
   renderer.render(scene,camera);
 }
@@ -145,3 +145,4 @@ window.onload = () => {
     initVideo();
   }).catch(console.log);
 };
+
