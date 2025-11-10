@@ -5,6 +5,7 @@ let video = null;
 let videoInput = null;
 let videoStream = null;
 
+// --- カメラ映像の初期化 ---
 function initVideo() {
   video = document.getElementById("camera");
   video.addEventListener("loadedmetadata", adjustVideo);
@@ -65,6 +66,7 @@ function adjustVideo() {
   }
 }
 
+// --- iOS判定 & DeviceOrientation の許可 ---
 function isIos(){
   const ua = navigator.userAgent.toLowerCase();
   return ua.includes("iphone") || ua.includes("ipad") || ua.includes("ipod");
@@ -101,6 +103,7 @@ function hideDeviceOrienModal(){
   deviceOrienModal.classList.add("is-hidden");
 }
 
+// --- Three.js 初期化 ---
 function initThree(){
   w = window.innerWidth;
   h = window.innerHeight;
@@ -108,14 +111,15 @@ function initThree(){
   scene = new THREE.Scene();
 
   camera = new THREE.PerspectiveCamera(45, w/h, 0.1, 30);
-  camera.position.set(0,0,5);
-  camera.lookAt(0,0,0);
+  camera.position.set(0,0,0); // カメラは原点
   scene.add(camera);
 
+  // --- オブジェクトを固定位置に配置 ---
   const geometry = new THREE.BoxGeometry(1,1,1);
   const material = new THREE.MeshNormalMaterial();
   object = new THREE.Mesh(geometry, material);
-  scene.add(object);
+  object.position.set(0,0,-5); // カメラ前方5mに固定
+  scene.add(object); // カメラの子にしない
 
   renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, canvas:canvas });
   renderer.setClearColor(0x000000,0);
@@ -124,7 +128,6 @@ function initThree(){
 
   controls = new THREE.DeviceOrientationControls(camera, true);
 
-  // 古い Three.js 対応: requestAnimationFrame に置き換え
   function animate() {
     requestAnimationFrame(animate);
     render();
@@ -133,16 +136,14 @@ function initThree(){
 }
 
 function render(){
-  //object.rotation.x += 0.01;
-  //object.rotation.y += 0.01;
   controls.update();
   renderer.render(scene,camera);
 }
 
+// --- ページ読み込み ---
 window.onload = () => {
   checkDeviceOrien().then(()=>{
     initThree();
     initVideo();
   }).catch(console.log);
 };
-
