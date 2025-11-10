@@ -5,31 +5,29 @@ let video = null;
 let videoInput = null;
 let videoStream = null;
 
-// --- カメラ映像初期化 ---
-const initVideo = () => {
+function initVideo() {
   video = document.getElementById("camera");
   video.addEventListener("loadedmetadata", adjustVideo);
 
-  navigator.mediaDevices
-    .enumerateDevices()
-    .then(devices => {
-      videoInput = devices.filter(d => d.kind === "videoinput");
-      getVideo();
-    })
-    .catch(console.log);
-};
+  navigator.mediaDevices.enumerateDevices().then(devices => {
+    videoInput = devices.filter(d => d.kind === "videoinput");
+    getVideo();
+  }).catch(console.log);
+}
 
-const setVideo = () => ({
-  audio: false,
-  video: {
-    deviceId: videoInput,
-    facingMode: "environment",
-    width: { min:1280, max:1920 },
-    height: { min:720, max:1080 }
-  }
-});
+function setVideo() {
+  return {
+    audio: false,
+    video: {
+      deviceId: videoInput,
+      facingMode: "environment",
+      width: { min:1280, max:1920 },
+      height: { min:720, max:1080 }
+    }
+  };
+}
 
-const getVideo = () => {
+function getVideo() {
   if(videoStream) videoStream.getTracks().forEach(t => t.stop());
   navigator.mediaDevices.getUserMedia(setVideo())
     .then(stream => {
@@ -39,12 +37,11 @@ const getVideo = () => {
     })
     .catch(e => {
       console.log(e);
-      alert("カメラ使用拒否");
+      alert("カメラ使用が拒否されました");
     });
-};
+}
 
-// --- Video のアスペクト比調整 ---
-const adjustVideo = () => {
+function adjustVideo() {
   const ww = window.innerWidth;
   const wh = window.innerHeight;
   const vw = video.videoWidth;
@@ -66,81 +63,85 @@ const adjustVideo = () => {
     video.style.width = ww + "px";
     video.style.marginLeft = "0px";
   }
-};
+}
 
-// --- iOS デバイスの向き許可 ---
-const isIos = () => {
+function isIos(){
   const ua = navigator.userAgent.toLowerCase();
   return ua.includes("iphone") || ua.includes("ipad") || ua.includes("ipod");
-};
+}
 
-const checkDeviceOrien = () => new Promise((resolve,reject)=>{
-  if(!isIos()) resolve();
+function checkDeviceOrien(){
+  return new Promise((resolve,reject)=>{
+    if(!isIos()) resolve();
 
-  const deviceOrienEvent = () => {
-    hideDeviceOrienModal();
-    window.removeEventListener("deviceorientation", deviceOrienEvent);
-    resolve();
-  };
-  window.addEventListener("deviceorientation", deviceOrienEvent);
+    const deviceOrienEvent = () => {
+      hideDeviceOrienModal();
+      window.removeEventListener("deviceorientation", deviceOrienEvent);
+      resolve();
+    };
+    window.addEventListener("deviceorientation", deviceOrienEvent);
 
-  deviceOrienModal = document.getElementById("device-orien-modal");
-  deviceOrienModalButton = document.getElementById("device-orien-modal-button");
-  deviceOrienModal.classList.remove("is-hidden");
+    deviceOrienModal = document.getElementById("device-orien-modal");
+    deviceOrienModalButton = document.getElementById("device-orien-modal-button");
+    deviceOrienModal.classList.remove("is-hidden");
 
-  deviceOrienModalButton.addEventListener("click", ()=>{
-    if(DeviceMotionEvent?.requestPermission) DeviceMotionEvent.requestPermission();
-    if(DeviceOrientationEvent?.requestPermission){
-      DeviceOrientationEvent.requestPermission().then(res=>{
-        if(res==="granted"){ hideDeviceOrienModal(); resolve(); }
-        else{ alert("許可が必要です"); reject(); }
-      });
-    } else { alert("許可が必要です"); reject(); }
+    deviceOrienModalButton.addEventListener("click", ()=>{
+      if(DeviceMotionEvent?.requestPermission) DeviceMotionEvent.requestPermission();
+      if(DeviceOrientationEvent?.requestPermission){
+        DeviceOrientationEvent.requestPermission().then(res=>{
+          if(res==="granted"){ hideDeviceOrienModal(); resolve(); }
+          else{ alert("許可が必要です"); reject(); }
+        });
+      } else { alert("許可が必要です"); reject(); }
+    });
   });
-});
+}
 
-const hideDeviceOrienModal = () => deviceOrienModal.classList.add("is-hidden");
+function hideDeviceOrienModal(){
+  deviceOrienModal.classList.add("is-hidden");
+}
 
-// --- Three.js 初期化 ---
-const initThree = () => {
+function initThree(){
   w = window.innerWidth;
   h = window.innerHeight;
   canvas = document.getElementById("canvas");
   scene = new THREE.Scene();
 
   camera = new THREE.PerspectiveCamera(45, w/h, 0.1, 30);
-  camera.position.set(0,0,0);
+  camera.position.set(0,0,5);
+  camera.lookAt(0,0,0);
+  scene.add(camera);
 
-  // --- 真ん中に固定オブジェクト ---
   const geometry = new THREE.BoxGeometry(1,1,1);
   const material = new THREE.MeshNormalMaterial();
   object = new THREE.Mesh(geometry, material);
-  object.position.set(0,0,-5); // カメラ前方に固定
   scene.add(object);
 
   renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, canvas:canvas });
+  renderer.setClearColor(0x000000,0);
   renderer.setSize(w,h);
   renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setClearColor(0x000000,0);
 
-  // --- カメラ回転用の DeviceOrientationControls ---
   controls = new THREE.DeviceOrientationControls(camera, true);
 
-  // --- アニメーションループ ---
-  const animate = () => {
+  // 古い Three.js 対応: requestAnimationFrame に置き換え
+  function animate() {
     requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene,camera);
-  };
+    render();
+  }
   animate();
-};
+}
 
-// --- ページロード時 ---
+function render(){
+  //object.rotation.x += 0.01;
+  //object.rotation.y += 0.01;
+  controls.update();
+  renderer.render(scene,camera);
+}
+
 window.onload = () => {
-  checkDeviceOrien()
-    .then(()=>{
-      initThree();
-      initVideo();
-    })
-    .catch(console.log);
+  checkDeviceOrien().then(()=>{
+    initThree();
+    initVideo();
+  }).catch(console.log);
 };
